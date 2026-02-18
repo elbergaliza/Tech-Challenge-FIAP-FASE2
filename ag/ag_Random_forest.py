@@ -1,4 +1,4 @@
-from ag.carregar import carregar_modelo_completo, carregar_dataframe, carregar_split
+from ag.carregar_dados import carregar_modelo_completo, carregar_dataframe, carregar_split
 from ag.algoritmo_genetico import gerar_populacao_inicial
 
 

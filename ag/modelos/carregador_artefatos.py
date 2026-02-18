@@ -47,6 +47,7 @@ class CarregadorArtefatos:
         pacote = joblib.load(path)
         return PacoteModelo(
             modelo=pacote["modelo"],
+            aptidao=pacote["aptidao"],
             metadata=pacote["metadata"],
             scaler=pacote.get("scaler"),
         )

@@ -3,7 +3,7 @@ Encapsula o DataFrame processado (CSV carregado).
 """
 
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, List, Optional, cast
 
 import pandas as pd
 
@@ -52,7 +52,7 @@ class DatasetProcessado:
 
     def coluna(self, nome: str) -> pd.Series:
         """Acesso a uma coluna pelo nome."""
-        return self._df[nome]
+        return cast(pd.Series, self._df[nome])
 
     def __repr__(self) -> str:
         return f"DatasetProcessado(shape={self.shape}, colunas={self.n_colunas})"

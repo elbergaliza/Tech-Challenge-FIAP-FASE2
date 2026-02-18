@@ -10,14 +10,7 @@ class Individuo:
     Um individuo é representado por um dicionário com os hiperparametros do modelo.
 
     O individuo é representado por um dicionário com os hiperparametros do modelo.
-    O dicionário deve conter as chaves:
-    - n_estimators: int
-    - max_depth: int
-    - random_state: int
-    - min_samples_leaf: int
-    - min_samples_split: int
-    - max_features: int
-    - n_jobs: int
+    O dicionário apresenta as chaves:
 
     - n_estimators: int, default=100
         Numero de arvores de decisao.
@@ -47,17 +40,29 @@ class Individuo:
         Nao usaremos o float.
         solução conhecida: 10
         range: [12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60]
-    # - max_features: str, default="sqrt"
-    #     Numero maximo de features a serem consideradas para cada split.
-    #     solução conhecida: "sqrt"
-    #     range: ["sqrt", "log2", "None"]
     - n_jobs: Numero de jobs a serem usados para o treinamento.
         solução conhecida: -1   (todos os cores disponiveis)
         range: [-1, 1, 2, 3, 4, 5, 6, 7]
 
     # TODO: acrescentar nos hiperparametros os valores STRING e FLOAT.
     # O "max_features" foi ignorado inicialmente para montarmos a solucao apenas com os hiperparametros numericos.
+    # - max_features: str, default="sqrt"
+    #     Numero maximo de features a serem consideradas para cada split.
+    #     solução conhecida: "sqrt"
+    #     range: ["sqrt", "log2", "None"]
 
+    Attributes:
+        hiperparametros: Dicionário com os valores dos hiperparâmetros.
+        aptidao: Aptidão do individuo.
+        ESPACOS_BUSCA: Dicionário com os espaços de busca para os hiperparâmetros.
+        Os valores de cada hiperparametro foram escolhidos analisando a documentação da 
+            classe RandomForestClassifier.
+
+        INDIVIDUO_DEFAULT: Dicionário com os valores padrão para os hiperparâmetros. 
+            Esses valores foram utilizados no treinamento do modelo. Portanto, são os que serão usados 
+            para criar o individuo default.
+        #INDIVIDUO_DEFAULT_STRING: Dicionário com os valores padrão para os hiperparâmetros STRING.
+        #INDIVIDUO_DEFAULT_FLOAT: Dicionário com os valores padrão para os hiperparâmetros FLOAT.
     """
 
     INDIVIDUO_DEFAULT = {
