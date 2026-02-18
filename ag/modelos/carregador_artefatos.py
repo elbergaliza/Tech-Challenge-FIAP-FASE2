@@ -10,7 +10,7 @@ import pandas as pd
 
 from ag.modelos.dados_split import DadosSplit
 from ag.modelos.dataset_processado import DatasetProcessado
-from ag.modelos.pacote_modelo import PacoteModelo
+from ag.modelos.modelo import PacoteModelo
 
 
 class CarregadorArtefatos:
