@@ -69,6 +69,7 @@ if __name__ == "__main__":
     print(f"Acurácia teste: {pacote.acuracia_teste:.4f}")
     print(f"ROC AUC: {pacote.roc_auc:.4f}")
     print("Classification report:")
+    print(f"  accuracy: {pacote.accuracy:.4f}")
     for classe, metricas in pacote.classification_report.items():
         # Ignora entradas do sklearn que não são classes (accuracy, macro avg, weighted avg)
         if not isinstance(metricas, dict) or "precision" not in metricas:
