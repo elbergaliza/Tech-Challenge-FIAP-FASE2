@@ -28,6 +28,8 @@ def parar_ag(geracao_atual: int) -> bool:
 
 # =============================================================================
 # Realiza a carga do modelo, dos dados e do split
+# - Modelo/dataset são carregados para validar os artefatos e metadados
+# - O AG usa somente o split (X/y) para treinar e avaliar indivíduos
 # =============================================================================
 model = carregar_modelo_completo()
 dataset = carregar_dataframe()
@@ -57,9 +59,11 @@ while not parar_ag(geracao):
     # =========================================================================
     tempo_total, tempos_individuos = population.avaliar_aptidao(split=split)
     tempo_medio_ind = sum(tempos_individuos) / len(tempos_individuos) if tempos_individuos else 0
+    melhor = population.melhor_individuo()
+    melhor_roc_auc = melhor.aptidao.roc_auc if melhor.aptidao is not None else 0.0
     print(
         f"Geração {geracao + 1}/{MAX_GENERATIONS} | "
-        f"Melhor aptidão: {population.melhor_individuo().aptidao:.4f} | "
+        f"Melhor aptidão: {melhor_roc_auc:.4f} | "
         f"Tempo total: {tempo_total:.2f}s | "
         f"Tempo médio/ind: {tempo_medio_ind:.2f}s"
     )

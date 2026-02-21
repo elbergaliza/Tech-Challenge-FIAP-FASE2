@@ -8,6 +8,7 @@ from typing import Optional, Tuple
 import joblib
 import pandas as pd
 
+from ag.modelos.aptidao_modelo import AptidaoModelo
 from ag.modelos.dados_split import DadosSplit
 from ag.modelos.dataset_processado import DatasetProcessado
 from ag.modelos.modelo import PacoteModelo
@@ -44,10 +45,11 @@ class CarregadorArtefatos:
     def carregar_modelo_completo(self) -> PacoteModelo:
         """Carrega modelo_completo.joblib e retorna um PacoteModelo."""
         path = self._dir / self.ARQUIVO_MODELO
+        # Estrutura esperada: dict com chaves modelo, aptidao, metadata e scaler
         pacote = joblib.load(path)
         return PacoteModelo(
             modelo=pacote["modelo"],
-            aptidao=pacote["aptidao"],
+            aptidao=AptidaoModelo.from_dict(pacote["aptidao"]),
             metadata=pacote["metadata"],
             scaler=pacote.get("scaler"),
         )
@@ -55,12 +57,14 @@ class CarregadorArtefatos:
     def carregar_dataframe(self) -> DatasetProcessado:
         """Carrega o CSV processado e retorna um DatasetProcessado."""
         path = self._dir / self.ARQUIVO_CSV
+        # CSV processado já deve conter as features finais e o target
         df = pd.read_csv(path)
         return DatasetProcessado(df=df, caminho=path)
 
     def carregar_split(self) -> DadosSplit:
         """Carrega dados_split.joblib e retorna um DadosSplit."""
         path = self._dir / self.ARQUIVO_SPLIT
+        # Estrutura esperada: dict com X_train, X_test, y_train, y_test
         dados = joblib.load(path)
         return DadosSplit(
             X_train=dados["X_train"],

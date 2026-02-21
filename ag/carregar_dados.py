@@ -57,6 +57,7 @@ def carregar_tudo(
 
 
 if __name__ == "__main__":
+    # Execução direta para validar e inspecionar os artefatos em data/
     print("Carregando arquivos da pasta data/...")
     print(f"Diretório base: {_DIR_DATA}\n")
 

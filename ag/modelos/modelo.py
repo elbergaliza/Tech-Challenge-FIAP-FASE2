@@ -4,6 +4,8 @@ Encapsula o pacote completo do modelo (modelo treinado, metadados e scaler).
 
 from typing import Any, List, Optional
 
+from ag.modelos.aptidao_modelo import AptidaoModelo
+
 
 class PacoteModelo:
     """
@@ -14,18 +16,7 @@ class PacoteModelo:
 
     pacote_completo = {
         'modelo': modelo treinado (ex.: RandomForestClassifier),
-        'aptidao': {
-            'acuracia_treino': float,
-            'acuracia_teste': float,
-            'roc_auc': float,
-            'classification_report': {
-                'accuracy': float,
-                'Não grave': {'precision': float, 'recall': float, 'f1-score': float, 'support': int},
-                'Grave': {'precision': float, 'recall': float, 'f1-score': float, 'support': int},
-                'macro avg': {'precision': float, 'recall': float, 'f1-score': float, 'support': int},
-                'weighted avg': {'precision': float, 'recall': float, 'f1-score': float, 'support': int},
-            },
-        },
+        'aptidao': AptidaoModelo,
         'metadata': {
             'data_treinamento': str (timezone UTC-3),
             'sklearn_version': str,
@@ -51,7 +42,7 @@ class PacoteModelo:
     def __init__(
         self,
         modelo: Any,
-        aptidao: dict,
+        aptidao: AptidaoModelo,
         metadata: dict,
         scaler: Optional[Any] = None,
     ) -> None:
@@ -79,21 +70,21 @@ class PacoteModelo:
     # -------------------------------------------------------------------------
 
     @property
-    def aptidao(self) -> dict:
-        """Dicionário completo de métricas de aptidão."""
+    def aptidao(self) -> AptidaoModelo:
+        """Objeto com métricas de aptidão."""
         return self._aptidao
 
     @property
     def acuracia_treino(self) -> float:
-        return self._aptidao.get("acuracia_treino", 0.0)
+        return self._aptidao.acuracia_treino
 
     @property
     def acuracia_teste(self) -> float:
-        return self._aptidao.get("acuracia_teste", 0.0)
+        return self._aptidao.acuracia_teste
 
     @property
     def roc_auc(self) -> float:
-        return self._aptidao.get("roc_auc", 0.0)
+        return self._aptidao.roc_auc
 
     @property
     def classification_report(self) -> dict:
@@ -109,12 +100,12 @@ class PacoteModelo:
                 'weighted avg': {'precision': float, 'recall': float, 'f1-score': float, 'support': int},
             }
         """
-        return self._aptidao.get("classification_report", {})
+        return self._aptidao.classification_report
 
     @property
     def accuracy(self) -> float:
         """Acurácia global do classification_report (sklearn)."""
-        return self.classification_report.get("accuracy", 0.0)
+        return self._aptidao.accuracy
 
     # -------------------------------------------------------------------------
     # Metadados

@@ -4,11 +4,12 @@ Representa a população de indivíduos do Algoritmo Genético (AG).
 
 import random
 import time
-from typing import Optional
+from typing import Any, Dict, Optional, cast
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import classification_report, roc_auc_score
 
+from ag.modelos.aptidao_modelo import AptidaoModelo
 from ag.modelos.dados_split import DadosSplit
 from ag.modelos.dataset_processado import DatasetProcessado
 from ag.modelos.individuo import Individuo
@@ -85,7 +86,7 @@ class Populacao:
     def avaliar_aptidao(
         self,
         split: DadosSplit,
-        metrica: str = "roc_auc",
+        metrica: str = "roc_auc",  # TODO: acrescentar as outras metricas de aptidao
     ) -> tuple[float, list[float]]:
         """
         Avalia a aptidão de todos os indivíduos da população.
@@ -112,17 +113,39 @@ class Populacao:
             y_pred_proba = modelo.predict_proba(split.X_test)
             y_test = split.y_test
 
-            if y_pred_proba.shape[1] == 2:
-                y_score = y_pred_proba[:, 1]
+            if isinstance(y_pred_proba, list):
+                y_pred_proba_array = y_pred_proba[0]
             else:
-                y_score = y_pred_proba
+                y_pred_proba_array = y_pred_proba
+
+            if y_pred_proba_array.shape[1] == 2:
+                y_score = y_pred_proba_array[:, 1]
+            else:
+                y_score = y_pred_proba_array
+            # Probabilidades para ROC AUC; rótulos previstos para relatório
+            y_pred = modelo.predict(split.X_test)
 
             try:
-                aptidao = float(roc_auc_score(y_test, y_score, multi_class="ovr"))
+                roc_auc = float(roc_auc_score(
+                    y_test, y_score, multi_class="ovr"))
             except ValueError:
-                aptidao = 0.0
+                roc_auc = 0.0
 
-            individuo.aptidao = aptidao
+            class_rep = classification_report(
+                split.y_test, y_pred,
+                labels=[0.0, 1.0],     # [np.float64(0.0), np.float64(1.0)]
+                target_names=['Não grave', 'Grave'],   # ['Não grave', 'Grave']
+                digits=4,
+                zero_division="warn",  # "warn", "strict", "raise"
+                output_dict=True)
+            # output_dict=True guarantees a dict; sklearn stubs declare str | dict
+            class_rep_dict: Dict[str, Any] = cast(Dict[str, Any], class_rep)
+
+            acuracia_treino = modelo.score(split.X_train, split.y_train)
+            acuracia_teste = modelo.score(split.X_test, split.y_test)
+
+            individuo.aptidao = AptidaoModelo(
+                roc_auc=roc_auc, classification_report=class_rep_dict, acuracia_treino=acuracia_treino, acuracia_teste=acuracia_teste)
             tempos.append(time.perf_counter() - t_inicio)
 
         tempo_total = time.perf_counter() - tempo_total_inicio
@@ -132,7 +155,10 @@ class Populacao:
         """
         Ordena a população por aptidão em ordem decrescente (melhor primeiro).
         """
-        self._individuos.sort(key=lambda i: i.aptidao or 0.0, reverse=True)
+        self._individuos.sort(
+            key=lambda i: i.aptidao.roc_auc if i.aptidao is not None else 0.0,
+            reverse=True,
+        )
 
     # -------------------------------------------------------------------------
     # Seleção
@@ -168,7 +194,10 @@ class Populacao:
             self._individuos,
             min(tamanho_torneio, len(self._individuos)),
         )
-        return max(participantes, key=lambda i: i.aptidao or 0.0)
+        return max(
+            participantes,
+            key=lambda i: i.aptidao.roc_auc if i.aptidao is not None else 0.0,
+        )
 
     # -------------------------------------------------------------------------
     # Nova geração (elitismo + seleção + cruzamento + mutação)

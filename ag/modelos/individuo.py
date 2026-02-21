@@ -2,6 +2,8 @@ import copy
 import random
 from typing import Optional
 
+from ag.modelos.aptidao_modelo import AptidaoModelo
+
 
 class Individuo:
     """
@@ -53,7 +55,7 @@ class Individuo:
 
     Attributes:
         hiperparametros: Dicionário com os valores dos hiperparâmetros.
-        aptidao: Aptidão do individuo.
+        aptidao: AptidaoModelo do individuo.
         ESPACOS_BUSCA: Dicionário com os espaços de busca para os hiperparâmetros.
         Os valores de cada hiperparametro foram escolhidos analisando a documentação da 
             classe RandomForestClassifier.
@@ -98,7 +100,7 @@ class Individuo:
             hiperparametros: Dicionário com os valores dos hiperparâmetros.
         """
         self.hiperparametros = hiperparametros
-        self.aptidao: Optional[float] = None
+        self.aptidao: Optional[AptidaoModelo] = None
 
     # -------------------------------------------------------------------------
     # Métodos de fábrica (class methods)
@@ -291,10 +293,12 @@ class Individuo:
             raise ValueError(
                 "Não é possível comparar indivíduos sem aptidão calculada."
             )
-        return self.aptidao < outro.aptidao
+        return self.aptidao.roc_auc < outro.aptidao.roc_auc
 
     def __repr__(self) -> str:
         aptidao_str = (
-            f", aptidao={self.aptidao:.4f}" if self.aptidao is not None else ""
+            f", aptidao={self.aptidao.roc_auc:.4f}"
+            if self.aptidao is not None
+            else ""
         )
         return f"Individuo(hiperparametros={self.hiperparametros}{aptidao_str})"
