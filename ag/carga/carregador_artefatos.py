@@ -8,10 +8,10 @@ from typing import Optional, Tuple
 import joblib
 import pandas as pd
 
-from ag.modelos.aptidao_modelo import AptidaoModelo
-from ag.modelos.dados_split import DadosSplit
-from ag.modelos.dataset_processado import DatasetProcessado
-from ag.modelos.modelo import PacoteModelo
+from ag.classes.aptidao_modelo import AptidaoModelo
+from ag.carga.dados_split import DadosSplit
+from ag.carga.dataset_processado import DatasetProcessado
+from ag.carga.modelo import PacoteModelo
 
 
 class CarregadorArtefatos:

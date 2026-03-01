@@ -2,7 +2,7 @@
 Código base do projeto Tech-Challenge-FIAP-FASE2.
 """
 
-from ag.modelos import (
+from ag.carga import (
     CarregadorArtefatos,
     DadosSplit,
     DatasetProcessado,

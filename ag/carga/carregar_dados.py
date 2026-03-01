@@ -1,7 +1,7 @@
 """
 Ponto de entrada para carregar artefatos da pasta data/.
 
-Utiliza as classes definidas em ag.modelos.
+Utiliza as classes definidas em ag.carga.
 Pode ser executado individualmente para testar a carga dos arquivos.
 
 Arquivos esperados na pasta data/:
@@ -15,11 +15,14 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 # Garante que a raiz do projeto está no path (para execução direta do script)
-_RAIZ = Path(__file__).resolve().parent.parent
+_RAIZ = Path(__file__).resolve().parent.parent.parent
 if str(_RAIZ) not in sys.path:
     sys.path.insert(0, str(_RAIZ))
 
-from ag.modelos import CarregadorArtefatos, DadosSplit, DatasetProcessado, PacoteModelo
+from ag.carga.carregador_artefatos import CarregadorArtefatos
+from ag.carga.dados_split import DadosSplit
+from ag.carga.dataset_processado import DatasetProcessado
+from ag.carga.modelo import PacoteModelo
 
 # Diretório data/ relativo à raiz do projeto
 _DIR_DATA = _RAIZ / "data"

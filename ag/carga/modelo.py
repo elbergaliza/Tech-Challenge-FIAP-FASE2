@@ -4,7 +4,7 @@ Encapsula o pacote completo do modelo (modelo treinado, metadados e scaler).
 
 from typing import Any, List, Optional
 
-from ag.modelos.aptidao_modelo import AptidaoModelo
+from ag.classes.aptidao_modelo import AptidaoModelo
 
 
 class PacoteModelo:

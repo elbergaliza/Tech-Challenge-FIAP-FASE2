@@ -9,10 +9,10 @@ from typing import Any, Dict, Optional, cast
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, roc_auc_score
 
-from ag.modelos.aptidao_modelo import AptidaoModelo
-from ag.modelos.dados_split import DadosSplit
-from ag.modelos.dataset_processado import DatasetProcessado
-from ag.modelos.individuo import Individuo
+from ag.carga.dados_split import DadosSplit
+from ag.carga.dataset_processado import DatasetProcessado
+from ag.classes.aptidao_modelo import AptidaoModelo
+from ag.classes.individuo import Individuo
 
 
 class Populacao:
@@ -53,6 +53,7 @@ class Populacao:
         dataset: Optional[DatasetProcessado] = None,
         incluir_default: bool = True,
     ) -> "Populacao":
+        # TODO: eliminar o split e o dataset
         """
         Gera a população inicial com indivíduos aleatórios.
 
@@ -88,6 +89,7 @@ class Populacao:
         split: DadosSplit,
         metrica: str = "roc_auc",  # TODO: acrescentar as outras metricas de aptidao
     ) -> tuple[float, list[float]]:
+        # TODO: excluir a metrica
         """
         Avalia a aptidão de todos os indivíduos da população.
 
@@ -155,6 +157,7 @@ class Populacao:
         """
         Ordena a população por aptidão em ordem decrescente (melhor primeiro).
         """
+        # TODO: acrescentar as outras metricas de aptidao como parametro para a ordenacao
         self._individuos.sort(
             key=lambda i: i.aptidao.roc_auc if i.aptidao is not None else 0.0,
             reverse=True,
@@ -162,8 +165,8 @@ class Populacao:
 
     # -------------------------------------------------------------------------
     # Seleção
+    # TECNICA: Especifica --> MAXIMIZACAO DO PARAMETRO DE APTIDAO
     # -------------------------------------------------------------------------
-
     def melhor_individuo(self) -> Individuo:
         """
         Retorna o melhor indivíduo da população (maior aptidão).
@@ -226,6 +229,8 @@ class Populacao:
             Nova Populacao (indivíduos sem aptidão calculada).
         """
         self.ordenar_por_aptidao()
+
+        # TODO: colocar teste de usar ou nao o elitismo
         elite = self._individuos[0].copiar()
         nova_pop: list[Individuo] = [elite]
 

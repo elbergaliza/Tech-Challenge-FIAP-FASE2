@@ -3,7 +3,7 @@ import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
 
-from ag.carregar_dados import carregar_modelo_completo, carregar_split
+from ag.carga import carregar_modelo_completo, carregar_split
 from ag.llm import get_laudo_generator
 from ag.llm.laudos_type import EntradaLaudo, ResultadoModelo, ContextoModelo
 

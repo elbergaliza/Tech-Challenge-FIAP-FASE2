@@ -9,8 +9,8 @@ armazenados em `data/`.
 ## Estrutura do projeto
 - `ag/`: pacote principal do projeto.
 - `ag/ag_RandomForest.py`: script principal que executa o AG.
-- `ag/carregar_dados.py`: utilitário para carregar/validar artefatos em `data/`.
-- `ag/modelos/`: classes de domínio (população, indivíduo, métricas e artefatos).
+- `ag/carga/`: pacote para carregamento de artefatos (modelo, dataset, split).
+- `ag/classes/`: classes de domínio (população, indivíduo, métricas e artefatos).
 - `data/`: artefatos de dados e modelo.
 - `docs/`: documentação complementar (relatórios).
 
@@ -44,7 +44,7 @@ python -m pip install -r requirements.txt
 ## Execução
 ### Validar artefatos (opcional)
 ```bash
-python -m ag.carregar_dados
+python -m ag.carga.carregar_dados
 ```
 
 ### Rodar o Algoritmo Genético
@@ -57,4 +57,4 @@ python -m ag.ag_RandomForest
 - O ROC AUC é calculado com probabilidades (`predict_proba`); o
   `classification_report` usa rótulos previstos (`predict`).
 - Caso os artefatos não estejam em `data/`, passe outro diretório ao carregar
-  via `ag.carregar_dados` (funções aceitam `diretorio_data`).
+  via `ag.carga.carregar_dados` (funções aceitam `diretorio_data`).

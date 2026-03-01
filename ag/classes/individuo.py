@@ -2,7 +2,7 @@ import copy
 import random
 from typing import Optional
 
-from ag.modelos.aptidao_modelo import AptidaoModelo
+from ag.classes.aptidao_modelo import AptidaoModelo
 
 
 class Individuo:
