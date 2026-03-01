@@ -1,6 +1,12 @@
 name: ml-hpo-randomforest-terraform
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/ml-hpo.yml"
+      - "scripts/**"
+      - "infra/terraform/**"
+      - "data/dados_split.joblib"
   workflow_dispatch:
     inputs:
       max_jobs:
@@ -33,6 +39,10 @@ jobs:
       ENVIRONMENT: ${{ vars.ENVIRONMENT || 'dev' }}
       S3_PREFIX: ${{ vars.S3_PREFIX || 'tech-challenge-hpo' }}
       HPO_JOB_NAME: rfhpo-${{ github.run_id }}-${{ github.run_attempt }}
+      MAX_JOBS: ${{ github.event.inputs.max_jobs || '12' }}
+      MAX_PARALLEL_JOBS: ${{ github.event.inputs.max_parallel_jobs || '2' }}
+      INSTANCE_TYPE: ${{ github.event.inputs.instance_type || 'ml.m5.xlarge' }}
+      MAX_RUNTIME_SECONDS: ${{ github.event.inputs.max_runtime_seconds || '3600' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -87,14 +97,14 @@ jobs:
             -var="hpo_prefix=${S3_PREFIX}" \
             -var="hpo_source_code_s3_uri=s3://${{ vars.S3_BUCKET }}/${S3_PREFIX}/code/sagemaker-source.tar.gz" \
             -var="hpo_training_image_uri=${{ vars.HPO_TRAINING_IMAGE_URI || '683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3' }}" \
-            -var="hpo_instance_type=${{ github.event.inputs.instance_type }}" \
-            -var="hpo_max_jobs=${{ github.event.inputs.max_jobs }}" \
-            -var="hpo_max_parallel_jobs=${{ github.event.inputs.max_parallel_jobs }}" \
-            -var="hpo_max_runtime_seconds=${{ github.event.inputs.max_runtime_seconds }}"
+            -var="hpo_instance_type=${INSTANCE_TYPE}" \
+            -var="hpo_max_jobs=${MAX_JOBS}" \
+            -var="hpo_max_parallel_jobs=${MAX_PARALLEL_JOBS}" \
+            -var="hpo_max_runtime_seconds=${MAX_RUNTIME_SECONDS}"
 
       - name: Show HPO cost estimate snapshot
         run: |
           python scripts/estimate_hpo_cost.py \
             --hourly "${{ vars.ESTIMATED_HOURLY_PRICE || '0.23' }}" \
             --hours-per-job "${{ vars.ESTIMATED_HOURS_PER_JOB || '0.25' }}" \
-            --max-jobs "${{ github.event.inputs.max_jobs }}"
+            --max-jobs "${MAX_JOBS}"
