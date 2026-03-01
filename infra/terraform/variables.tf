@@ -26,8 +26,8 @@ variable "notification_email" {
 }
 
 variable "monthly_budget_limit_usd" {
-  type        = string
-  default     = "10"
+  type    = string
+  default = "10"
 }
 
 variable "create_budget" {
@@ -102,33 +102,33 @@ variable "hpo_objective_metric_regex" {
 }
 
 variable "hpo_instance_type" {
-  type        = string
-  default     = "ml.m5.xlarge"
+  type    = string
+  default = "ml.m5.xlarge"
 }
 
 variable "hpo_instance_count" {
-  type        = number
-  default     = 1
+  type    = number
+  default = 1
 }
 
 variable "hpo_volume_size_gb" {
-  type        = number
-  default     = 30
+  type    = number
+  default = 30
 }
 
 variable "hpo_max_runtime_seconds" {
-  type        = number
-  default     = 3600
+  type    = number
+  default = 3600
 }
 
 variable "hpo_max_jobs" {
-  type        = number
-  default     = 12
+  type    = number
+  default = 12
 }
 
 variable "hpo_max_parallel_jobs" {
-  type        = number
-  default     = 2
+  type    = number
+  default = 2
 }
 
 variable "hpo_n_estimators_min" {
