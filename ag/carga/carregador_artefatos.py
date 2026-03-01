@@ -45,7 +45,40 @@ class CarregadorArtefatos:
     def carregar_modelo_completo(self) -> PacoteModelo:
         """Carrega modelo_completo.joblib e retorna um PacoteModelo."""
         path = self._dir / self.ARQUIVO_MODELO
-        # Estrutura esperada: dict com chaves modelo, aptidao, metadata e scaler
+        # Dict com chaves modelo, aptidao, metadata e scaler
+        # pacote_completo = {
+        #     # Modelo treinado
+        #     'modelo': rf_convertido,
+
+        #     #Metricas
+        #     'aptidao': {
+        #     'acuracia_treino': acuracia_treino,
+        #     'acuracia_teste': acuracia_teste,
+        #     'roc_auc': roc_auc,
+        #     'classification_report': class_rep
+        #     },
+
+        #     # Metadados
+        #     'metadata': {
+        #         'data_treinamento': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        #         'sklearn_version': "1.6.1",
+        #         'pandas_version': pd.__version__,
+        #         'target_name': 'HOSPITALIZ',
+        #         'feature_names': feature_names_convert,
+        #         'hiperparametros': {
+        #         'n_estimators': 50,
+        #         'max_depth': 5,
+        #         'random_state': 42,
+        #         'min_samples_leaf': 10,
+        #         'min_samples_split': 10,
+        #         'max_features': "sqrt",
+        #         'n_jobs': -1
+        #         }
+        #     },
+
+        #     # Preprocessadores (se houver)
+        #     'scaler': scaler if 'scaler' in locals() else None,
+        # }
         pacote = joblib.load(path)
         return PacoteModelo(
             modelo=pacote["modelo"],
@@ -64,7 +97,13 @@ class CarregadorArtefatos:
     def carregar_split(self) -> DadosSplit:
         """Carrega dados_split.joblib e retorna um DadosSplit."""
         path = self._dir / self.ARQUIVO_SPLIT
-        # Estrutura esperada: dict com X_train, X_test, y_train, y_test
+        # Dict com X_train, X_test, y_train, y_test
+        # dados_split = {
+        #     'X_train': X_train_convert,
+        #     'X_test': X_test_convert,
+        #     'y_train': y_train_convert,
+        #     'y_test': y_test_convert
+        # }
         dados = joblib.load(path)
         return DadosSplit(
             X_train=dados["X_train"],

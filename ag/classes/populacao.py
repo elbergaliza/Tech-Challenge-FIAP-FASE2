@@ -4,13 +4,12 @@ Representa a população de indivíduos do Algoritmo Genético (AG).
 
 import random
 import time
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, cast
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, roc_auc_score
 
 from ag.carga.dados_split import DadosSplit
-from ag.carga.dataset_processado import DatasetProcessado
 from ag.classes.aptidao_modelo import AptidaoModelo
 from ag.classes.individuo import Individuo
 
@@ -49,11 +48,8 @@ class Populacao:
     def gerar_inicial(
         cls,
         tamanho: int,
-        split: Optional[DadosSplit] = None,
-        dataset: Optional[DatasetProcessado] = None,
         incluir_default: bool = True,
     ) -> "Populacao":
-        # TODO: eliminar o split e o dataset
         """
         Gera a população inicial com indivíduos aleatórios.
 
@@ -62,8 +58,6 @@ class Populacao:
 
         Args:
             tamanho: Número de indivíduos na população.
-            split: Dados de treino/teste (opcional, usado em avaliação posterior).
-            dataset: Dataset processado (opcional).
             incluir_default: Se True, inclui Individuo.default() como primeiro
                 indivíduo. O restante é preenchido com indivíduos aleatórios.
 
@@ -87,18 +81,15 @@ class Populacao:
     def avaliar_aptidao(
         self,
         split: DadosSplit,
-        metrica: str = "roc_auc",  # TODO: acrescentar as outras metricas de aptidao
     ) -> tuple[float, list[float]]:
-        # TODO: excluir a metrica
         """
         Avalia a aptidão de todos os indivíduos da população.
 
         Treina um RandomForestClassifier com os hiperparâmetros de cada
-        indivíduo e calcula a métrica de aptidão no conjunto de teste.
+        indivíduo e calcula a métrica de aptidão (ROC-AUC) no conjunto de teste.
 
         Args:
             split: Dados de treino e teste (X_train, X_test, y_train, y_test).
-            metrica: Métrica de avaliação. Opções: "roc_auc" (padrão).
 
         Returns:
             Tupla (tempo_total_segundos, lista de tempos por indivíduo).

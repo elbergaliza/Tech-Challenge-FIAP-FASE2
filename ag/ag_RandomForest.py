@@ -1,20 +1,50 @@
+
+# # usa os defaults (populacao=100, geracoes=50, mutacao=0.1, torneio=3)
+# python -m ag.ag_RandomForest
+
+# # sobrescreve qualquer combinação de parâmetros
+# python -m ag.ag_RandomForest --populacao 200 --geracoes 100 --mutacao 0.2 --torneio 5
+
+import argparse
+import threading
+
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objs as go
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output
+
 from ag.carga import carregar_modelo_completo, carregar_dataframe, carregar_split
 from ag.classes.populacao import Populacao
-import threading
-from dash import Dash, dcc, html
-from dash.dependencies import Output, Input
-import plotly.graph_objs as go
-import plotly.express as px
-import pandas as pd
 
 # =============================================================================
-# Parâmetros do Algoritmo Genético
+# Parâmetros do Algoritmo Genético (via linha de comando ou defaults)
 # =============================================================================
-# TODO: ajustar os parâmetros do AG
-POPULATION_SIZE = 100
-MAX_GENERATIONS = 50
-TAXA_MUTACAO = 0.1
-TAMANHO_TORNEIO = 3
+parser = argparse.ArgumentParser(
+    description="Algoritmo Genético para otimização de hiperparâmetros do RandomForestClassifier",
+)
+parser.add_argument(
+    "--populacao", type=int, default=100,
+    help="Tamanho da população (default: 100)",
+)
+parser.add_argument(
+    "--geracoes", type=int, default=50,
+    help="Número máximo de gerações (default: 50)",
+)
+parser.add_argument(
+    "--mutacao", type=float, default=0.1,
+    help="Taxa de mutação por gene, entre 0.0 e 1.0 (default: 0.1)",
+)
+parser.add_argument(
+    "--torneio", type=int, default=3,
+    help="Tamanho do torneio para seleção (default: 3)",
+)
+args = parser.parse_args()
+
+POPULATION_SIZE: int = args.populacao
+MAX_GENERATIONS: int = args.geracoes
+TAXA_MUTACAO: float = args.mutacao
+TAMANHO_TORNEIO: int = args.torneio
 
 
 def parar_ag(geracao_atual: int) -> bool:
@@ -152,8 +182,6 @@ split = carregar_split()
 # =============================================================================
 population = Populacao.gerar_inicial(
     tamanho=POPULATION_SIZE,
-    split=split,
-    dataset=dataset,
     incluir_default=True,
 )
 
@@ -237,6 +265,53 @@ while not parar_ag(geracao):
 population.avaliar_aptidao(split=split)
 melhor = population.melhor_individuo()
 
-print(f"\n--- Resultado Final ---")
-print(f"Melhor indivíduo: {melhor}")
-print(f"Hiperparâmetros: {melhor.hiperparametros}")
+print("\n--- Resultado Final ---")
+print(melhor)
+
+# =========================================================================
+# Comparação de hiperparâmetros: modelo carregado vs melhor indivíduo do AG
+# =========================================================================
+hp_modelo = model.hiperparametros
+hp_melhor = melhor.hiperparametros
+todas_chaves = sorted(set(hp_modelo) | set(hp_melhor))
+
+df_hp = pd.DataFrame({
+    "Hiperparâmetro": todas_chaves,
+    "Modelo carregado": [hp_modelo.get(k, "—") for k in todas_chaves],
+    "Melhor AG": [hp_melhor.get(k, "—") for k in todas_chaves],
+})
+df_hp["Alterado?"] = df_hp.apply(
+    lambda r: "Sim" if r["Modelo carregado"] != r["Melhor AG"] else "", axis=1,
+)
+
+print("\n=== Comparação de Hiperparâmetros ===")
+print(df_hp.to_string(index=False))
+
+# =========================================================================
+# Comparação de métricas de aptidão: modelo carregado vs melhor indivíduo
+# =========================================================================
+apt_modelo = model.aptidao
+apt_melhor = melhor.aptidao
+assert apt_melhor is not None, "Aptidão do melhor indivíduo não foi calculada."
+
+metricas = {
+    "Acurácia treino": (apt_modelo.acuracia_treino, apt_melhor.acuracia_treino),
+    "Acurácia teste": (apt_modelo.acuracia_teste, apt_melhor.acuracia_teste),
+    "ROC-AUC": (apt_modelo.roc_auc, apt_melhor.roc_auc),
+    "Accuracy (report)": (apt_modelo.accuracy, apt_melhor.accuracy),
+}
+
+nomes = list(metricas.keys())
+vals_modelo = [v[0] for v in metricas.values()]
+vals_melhor = [v[1] for v in metricas.values()]
+deltas = [m - c for c, m in metricas.values()]
+
+df_apt = pd.DataFrame({
+    "Métrica": nomes,
+    "Modelo carregado": [f"{v:.4f}" for v in vals_modelo],
+    "Melhor AG": [f"{v:.4f}" for v in vals_melhor],
+    "Delta": [f"{d:+.4f}" for d in deltas],
+})
+
+print("\n=== Comparação de Métricas de Aptidão ===")
+print(df_apt.to_string(index=False))
