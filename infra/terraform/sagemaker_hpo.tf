@@ -47,7 +47,11 @@ resource "null_resource" "sagemaker_hpo" {
         --max-runtime-seconds "${self.triggers.max_runtime_seconds}" \
         --base-job-name "${self.triggers.hpo_job_name}" \
         --target "${self.triggers.target}" \
-        --source-dir "${path.root}/../../scripts/sagemaker"
+        --training-image-uri "${self.triggers.training_image_uri}" \
+        --source-code-s3-uri "${self.triggers.source_code_s3_uri}" \
+        --objective-metric-name "${self.triggers.objective_metric_name}" \
+        --objective-metric-regex "${self.triggers.objective_metric_regex}" \
+        --wait
     EOT
   }
 }

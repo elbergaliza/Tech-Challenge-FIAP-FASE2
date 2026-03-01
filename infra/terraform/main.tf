@@ -78,37 +78,7 @@ resource "aws_iam_role_policy" "github_actions" {
     Statement = [
       {
         Effect = "Allow",
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:ListBucket"
-        ],
-        Resource = [
-          aws_s3_bucket.artifacts.arn,
-          "${aws_s3_bucket.artifacts.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow",
-        Action = [
-          "sagemaker:*"
-        ],
-        Resource = ["*"]
-      },
-      {
-        Effect = "Allow",
-        Action = [
-          "iam:PassRole"
-        ],
-        Resource = ["*"]
-      },
-      {
-        Effect = "Allow",
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ],
+        Action   = ["*"],
         Resource = ["*"]
       }
     ]
