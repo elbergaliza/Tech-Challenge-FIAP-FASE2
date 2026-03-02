@@ -77,7 +77,7 @@ resource "aws_iam_role_policy" "github_actions" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow",
+        Effect   = "Allow",
         Action   = ["*"],
         Resource = ["*"]
       }

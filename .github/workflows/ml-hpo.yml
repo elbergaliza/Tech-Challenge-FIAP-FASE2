@@ -1,12 +1,6 @@
 name: ml-hpo-randomforest-terraform
 
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/ml-hpo.yml"
-      - "scripts/**"
-      - "infra/terraform/**"
-      - "data/dados_split.joblib"
   workflow_dispatch:
     inputs:
       max_jobs:
