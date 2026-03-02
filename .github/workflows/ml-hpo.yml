@@ -1,0 +1,104 @@
+name: ml-hpo-randomforest-terraform
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_jobs:
+        description: 'Número total de training jobs no HPO'
+        required: true
+        default: '12'
+      max_parallel_jobs:
+        description: 'Jobs paralelos no HPO'
+        required: true
+        default: '2'
+      instance_type:
+        description: 'Tipo de instância de treino'
+        required: true
+        default: 'ml.m5.xlarge'
+      max_runtime_seconds:
+        description: 'Tempo máximo por training job (segundos)'
+        required: true
+        default: '3600'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  hpo:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+      PROJECT_NAME: ${{ vars.PROJECT_NAME || 'tech-challenge' }}
+      ENVIRONMENT: ${{ vars.ENVIRONMENT || 'dev' }}
+      S3_PREFIX: ${{ vars.S3_PREFIX || 'tech-challenge-hpo' }}
+      HPO_JOB_NAME: rfhpo-${{ github.run_id }}-${{ github.run_attempt }}
+      MAX_JOBS: ${{ github.event.inputs.max_jobs || '12' }}
+      MAX_PARALLEL_JOBS: ${{ github.event.inputs.max_parallel_jobs || '2' }}
+      INSTANCE_TYPE: ${{ github.event.inputs.instance_type || 'ml.m5.xlarge' }}
+      MAX_RUNTIME_SECONDS: ${{ github.event.inputs.max_runtime_seconds || '3600' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install joblib pandas scikit-learn boto3
+
+      - name: Export split to CSV
+        run: python scripts/export_split_to_csv.py --out-dir data/sagemaker
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload CSVs to S3
+        run: |
+          aws s3 cp data/sagemaker/train.csv s3://${{ vars.S3_BUCKET }}/${S3_PREFIX}/input/train.csv
+          aws s3 cp data/sagemaker/validation.csv s3://${{ vars.S3_BUCKET }}/${S3_PREFIX}/input/validation.csv
+          aws s3 cp data/sagemaker/test_features.csv s3://${{ vars.S3_BUCKET }}/${S3_PREFIX}/input/test_features.csv
+          aws s3 cp data/sagemaker/test_labels.csv s3://${{ vars.S3_BUCKET }}/${S3_PREFIX}/input/test_labels.csv
+
+      - name: Pack SageMaker training code
+        run: |
+          tar -czf sagemaker-source.tar.gz -C scripts/sagemaker train_rf.py
+          aws s3 cp sagemaker-source.tar.gz s3://${{ vars.S3_BUCKET }}/${S3_PREFIX}/code/sagemaker-source.tar.gz
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        working-directory: infra/terraform
+        run: terraform init
+
+      - name: Terraform apply (create HPO job)
+        working-directory: infra/terraform
+        run: |
+          terraform apply -auto-approve \
+            -var="project_name=${PROJECT_NAME}" \
+            -var="environment=${ENVIRONMENT}" \
+            -var="github_repository=${{ github.repository }}" \
+            -var="notification_email=${{ vars.BUDGET_ALERT_EMAIL || 'change-me@example.com' }}" \
+            -var="hpo_enabled=true" \
+            -var="hpo_job_name=${HPO_JOB_NAME}" \
+            -var="hpo_prefix=${S3_PREFIX}" \
+            -var="hpo_source_code_s3_uri=s3://${{ vars.S3_BUCKET }}/${S3_PREFIX}/code/sagemaker-source.tar.gz" \
+            -var="hpo_training_image_uri=${{ vars.HPO_TRAINING_IMAGE_URI || '683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3' }}" \
+            -var="hpo_instance_type=${INSTANCE_TYPE}" \
+            -var="hpo_max_jobs=${MAX_JOBS}" \
+            -var="hpo_max_parallel_jobs=${MAX_PARALLEL_JOBS}" \
+            -var="hpo_max_runtime_seconds=${MAX_RUNTIME_SECONDS}"
+
+      - name: Show HPO cost estimate snapshot
+        run: |
+          python scripts/estimate_hpo_cost.py \
+            --hourly "${{ vars.ESTIMATED_HOURLY_PRICE || '0.23' }}" \
+            --hours-per-job "${{ vars.ESTIMATED_HOURS_PER_JOB || '0.25' }}" \
+            --max-jobs "${MAX_JOBS}"

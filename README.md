@@ -41,6 +41,42 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
+## Configuração
+
+### Geração de laudos com LLM (opcional)
+O projeto suporta geração de laudos médicos usando LLM (Gemini) ou um template padrão.
+
+#### Modo template (padrão)
+Se não configurar nenhuma API key, o sistema usará automaticamente um template em inglês hardcoded. Não requer configuração adicional.
+
+#### Modo Gemini (recomendado)
+Para usar o Google Gemini e gerar laudos personalizados:
+
+1. **Obter API key do Gemini:**
+   - Acesse [Google AI Studio](https://aistudio.google.com/apikey)
+   - Faça login com sua conta Google
+   - Clique em "Get API Key" ou "Create API Key"
+   - Copie a chave gerada
+
+2. **Criar arquivo `.env` na raiz do projeto:**
+   ```bash
+   # .env
+   LLM_PROVIDER=gemini
+   GEMINI_API_KEY=sua_chave_aqui
+   GEMINI_MODEL=gemini-2.5-flash
+   GEMINI_MAX_OUTPUT_TOKENS=450
+   ```
+
+3. **Validar configuração:**
+   ```bash
+   python -m ag.gerar_laudo_exame
+   ```
+
+   Se a API key estiver incorreta ou ausente (com `LLM_PROVIDER=gemini`), você verá:
+   ```
+   RuntimeError: Missing GEMINI_API_KEY (or GOOGLE_API_KEY) in environment/.env
+   ```
+
 ## Execução
 ### Validar artefatos (opcional)
 ```bash
@@ -51,6 +87,12 @@ python -m ag.carga.carregar_dados
 ```bash
 python -m ag.ag_RandomForest
 ```
+
+### Gerar laudo de exame
+```bash
+python -m ag.gerar_laudo_exame
+```
+Este script carrega o modelo otimizado, faz uma predição em um exemplo de teste e gera um laudo médico explicativo usando LLM (se configurado) ou template.
 
 ## Notas técnicas
 - O AG utiliza `dados_split.joblib` para treinar e avaliar indivíduos.
