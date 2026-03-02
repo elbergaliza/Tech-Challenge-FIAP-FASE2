@@ -64,7 +64,7 @@ Para usar o Google Gemini e gerar laudos personalizados:
    LLM_PROVIDER=gemini
    GEMINI_API_KEY=sua_chave_aqui
    GEMINI_MODEL=gemini-2.5-flash
-   GEMINI_MAX_OUTPUT_TOKENS=450
+   GEMINI_MAX_OUTPUT_TOKENS=10000
    ```
 
 3. **Validar configuração:**
@@ -93,6 +93,15 @@ python -m ag.ag_RandomForest
 python -m ag.gerar_laudo_exame
 ```
 Este script carrega o modelo otimizado, faz uma predição em um exemplo de teste e gera um laudo médico explicativo usando LLM (se configurado) ou template.
+
+### Avaliar os laudos
+
+basta ir ao terminal e decidir quantos laudos deseja avaliar com:
+
+```bash
+python -m ag.avaliar_laudos --n {index}
+
+```
 
 ## Notas técnicas
 - O AG utiliza `dados_split.joblib` para treinar e avaliar indivíduos.

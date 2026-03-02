@@ -1,56 +1,54 @@
 from typing import Dict, Any
+import os
 import numpy as np
+from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv()
 
-from ag.carga import carregar_modelo_completo, carregar_split
+def load_dotenv_upwards(filename: str = ".env", max_depth: int = 6) -> Path | None:
+    start = Path(__file__).resolve().parent
+    cur = start
+    for _ in range(max_depth):
+        candidate = cur / filename
+        if candidate.exists():
+            load_dotenv(dotenv_path=candidate, override=True)
+            return candidate
+        cur = cur.parent
+    return None
+
+ENV_PATH = load_dotenv_upwards()
+
+from ag.carga import carregar_modelo_completo, carregar_split, carregar_dataframe, carregar_dados
 from ag.llm import get_laudo_generator
 from ag.llm.laudos_type import EntradaLaudo, ResultadoModelo, ContextoModelo
 
 
-def montar_resumo_exame(x_row, feature_names) -> Dict[str, Any]:
-    """Monta resumo a partir de dados normalizados (para compatibilidade)."""
-    resumo = {}
-    if not feature_names:
-        feature_names = [f"feature_{i}" for i in range(min(10, len(x_row)))]
-    for i, name in enumerate(feature_names[:10]):
-        resumo[name] = float(x_row[i])
-    return resumo
-
-
 def montar_resumo_exame_original(dados_originais) -> Dict[str, Any]:
-    """Monta resumo a partir dos dados originais do CSV (não normalizados)."""
     resumo = {}
-
-    # Mapear valores para descrições legíveis
     for col in dados_originais.index:
         valor = dados_originais[col]
 
-        # Interpretar colunas binárias (0/1) - sintomas e comorbidades
-        if col in ['ARTRALGIA', 'ARTRITE', 'CEFALEIA', 'CONJUNTVIT', 'DOR_COSTAS',
-                   'DOR_RETRO', 'EXANTEMA', 'FEBRE', 'LACO', 'LEUCOPENIA', 'MIALGIA',
-                   'NAUSEA', 'PETEQUIA_N', 'VOMITO', 'ACIDO_PEPT', 'AUTO_IMUNE',
-                   'DIABETES', 'HEMATOLOG', 'HEPATOPAT', 'HIPERTENSA', 'RENAL']:
-            resumo[col] = 'Present' if valor == 1.0 else 'Absent'
+        if col in [
+            'ARTRALGIA', 'ARTRITE', 'CEFALEIA', 'CONJUNTVIT', 'DOR_COSTAS',
+            'DOR_RETRO', 'EXANTEMA', 'FEBRE', 'LACO', 'LEUCOPENIA', 'MIALGIA',
+            'NAUSEA', 'PETEQUIA_N', 'VOMITO', 'ACIDO_PEPT', 'AUTO_IMUNE',
+            'DIABETES', 'HEMATOLOG', 'HEPATOPAT', 'HIPERTENSA', 'RENAL'
+        ]:
+            resumo[col] = "Present" if float(valor) == 1.0 else "Absent"
 
-        # CS_SEXO: 0=Female, 1=Male (validado pelo fato de que gestante só ocorre quando sexo=0)
         elif col == 'CS_SEXO':
-            resumo[col] = 'Female' if valor == 0 else 'Male'
+            resumo[col] = "Female" if float(valor) == 0.0 else "Male"
 
-        # CS_GESTANT: gestante (só aplicável quando sexo=0/feminino)
         elif col == 'CS_GESTANT':
-            if valor == 1.0:
-                resumo[col] = 'Yes'
-            elif valor == 2.0:
-                resumo[col] = 'No'
+            if float(valor) == 1.0:
+                resumo[col] = "Yes"
+            elif float(valor) == 2.0:
+                resumo[col] = "No"
             else:
-                resumo[col] = 'N/A or Not applicable'
+                resumo[col] = "N/A"
 
-        # Idade
         elif col == 'AGE_YEARS':
             resumo[col] = f"{int(valor)} years old"
 
-        # Ignorar colunas de data e target
         elif col not in ['HOSPITALIZ', 'ANO_SIN', 'MES_SIN', 'DIA_SIN', 'DIA_SEMANA_SIN', 'NU_IDADE_N']:
             resumo[col] = valor
 
@@ -58,30 +56,27 @@ def montar_resumo_exame_original(dados_originais) -> Dict[str, Any]:
 
 
 if __name__ == "__main__":
-    print("[START] generating report...")
-    load_dotenv()
-    import os
+    print("[DEBUG] .env found at:", ENV_PATH)
     print("[DEBUG] LLM_PROVIDER =", os.getenv("LLM_PROVIDER"))
     print("[DEBUG] GEMINI_API_KEY present =", bool(os.getenv("GEMINI_API_KEY")))
-    print("[OK] dotenv loaded")
-    ...
-    print("[OK] report generated, printing...")
 
     pacote = carregar_modelo_completo()
     split = carregar_split()
-
-    # Carregar dados originais do CSV para enviar ao LLM
-    from ag.carregar_dados import carregar_dataframe
     dataset = carregar_dataframe()
 
-    # Pegar a primeira linha do teste (dados normalizados para predição)
     X = split.X_test
     x_row = X.iloc[0].values if hasattr(X, "iloc") else X[0]
-    x_row = np.asarray(x_row, dtype=float)  # padroniza
+    x_row = np.asarray(x_row, dtype=float)
 
-    # Pegar também o índice original para buscar dados não normalizados
     indice_teste = X.index[0] if hasattr(X, "index") else 0
-    dados_originais = dataset.df.loc[indice_teste] if hasattr(X, "index") else dataset.df.iloc[indice_teste]
+
+    df = getattr(dataset, "df", None)
+    if df is None and isinstance(dataset, dict):
+        df = dataset.get("df") or dataset.get("dataframe")
+    if df is None:
+        raise RuntimeError("carregar_dataframe() did not return an object with .df (or dict with 'df').")
+
+    dados_originais = df.loc[indice_teste] if hasattr(X, "index") else df.iloc[indice_teste]
 
     proba = None
     try:
@@ -90,10 +85,6 @@ if __name__ == "__main__":
         print(f"[WARN] predict_proba failed, falling back to predict(): {e}")
 
     classe = int(proba >= 0.5) if proba is not None else int(pacote.predict(np.array([x_row]))[0])
-
-    feature_names = getattr(pacote, "feature_names", None)
-    if not feature_names:
-        feature_names = list(getattr(split.X_test, "columns", []))
 
     entrada = EntradaLaudo(
         resultado=ResultadoModelo(

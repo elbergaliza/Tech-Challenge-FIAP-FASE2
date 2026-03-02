@@ -16,6 +16,7 @@ from dash.dependencies import Input, Output
 
 from ag.carga import carregar_modelo_completo, carregar_dataframe, carregar_split
 from ag.classes.populacao import Populacao
+from ag.salvar_modelo_final import treinar_e_salvar_modelo_final
 
 # =============================================================================
 # Parâmetros do Algoritmo Genético (via linha de comando ou defaults)
@@ -264,7 +265,14 @@ while not parar_ag(geracao):
 # =============================================================================
 population.avaliar_aptidao(split=split)
 melhor = population.melhor_individuo()
-
+best_params = melhor.hiperparametros
+treinar_e_salvar_modelo_final(
+    best_params=best_params,
+    split=split,
+    output_path="data/modelo_completo.joblib",
+    target_name="HOSPITALIZ",
+)
+print("[OK] Saved final optimized model to data/modelo_completo.joblib")
 print("\n--- Resultado Final ---")
 print(melhor)
 
