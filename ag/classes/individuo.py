@@ -84,12 +84,12 @@ class Individuo:
     # }
 
     ESPACOS_BUSCA: dict[str, list] = {
-        "n_estimators":      [20, 30, 40, 50, 60, 70, 80, 90, 100],
-        "max_depth":         [3, 4, 5, 6, 7, 8, 9, 10],
+        "n_estimators":      list(range(20, 100)),
+        "max_depth":         list(range(3, 50)),
         "random_state":      [31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97],
-        "min_samples_leaf":  [6, 8, 10, 12, 14, 16, 18, 20],
-        "min_samples_split": [12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60],
-        "n_jobs":            [-1, 1, 2, 3, 4, 5, 6, 7],
+        "min_samples_leaf":  list(range(6, 50)),
+        "min_samples_split": list(range(12, 100)),
+        "n_jobs":            list(range(-1, 8)),
     }
 
     def __init__(self, hiperparametros: dict) -> None:
