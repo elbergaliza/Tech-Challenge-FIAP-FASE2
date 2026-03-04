@@ -1,0 +1,32 @@
+{
+  "acuracia_treino": 0.8879345326660354,
+  "acuracia_teste": 0.8405,
+  "roc_auc": 0.6498383743449533,
+  "classification_report": {
+    "Não grave": {
+      "precision": 0.9411425274091172,
+      "recall": 0.8825757575757576,
+      "f1-score": 0.9109187377827422,
+      "support": 1848.0
+    },
+    "Grave": {
+      "precision": 0.18726591760299627,
+      "recall": 0.32894736842105265,
+      "f1-score": 0.2386634844868735,
+      "support": 152.0
+    },
+    "accuracy": 0.8405,
+    "macro avg": {
+      "precision": 0.5642042225060567,
+      "recall": 0.6057615629984051,
+      "f1-score": 0.5747911111348079,
+      "support": 2000.0
+    },
+    "weighted avg": {
+      "precision": 0.8838479050638519,
+      "recall": 0.8405,
+      "f1-score": 0.8598273385322561,
+      "support": 2000.0
+    }
+  }
+}

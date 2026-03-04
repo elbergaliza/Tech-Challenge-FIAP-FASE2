@@ -1,0 +1,48 @@
+{
+  "parametros_execucao": {
+    "populacao": 10,
+    "geracoes": 2,
+    "taxa_mutacao": 0.1,
+    "tamanho_torneio": 3
+  },
+  "hiperparametros": {
+    "n_estimators": 52,
+    "max_depth": 45,
+    "random_state": 53,
+    "min_samples_leaf": 24,
+    "min_samples_split": 49,
+    "n_jobs": 6
+  },
+  "aptidao": {
+    "acuracia_treino": 0.9153253077235223,
+    "acuracia_teste": 0.8815,
+    "roc_auc": 0.6602479209387104,
+    "classification_report": {
+      "Não grave": {
+        "precision": 0.9351701782820098,
+        "recall": 0.9366883116883117,
+        "f1-score": 0.9359286293592863,
+        "support": 1848.0
+      },
+      "Grave": {
+        "precision": 0.21476510067114093,
+        "recall": 0.21052631578947367,
+        "f1-score": 0.21262458471760798,
+        "support": 152.0
+      },
+      "accuracy": 0.8815,
+      "macro avg": {
+        "precision": 0.5749676394765754,
+        "recall": 0.5736073137388926,
+        "f1-score": 0.5742766070384472,
+        "support": 2000.0
+      },
+      "weighted avg": {
+        "precision": 0.8804193923835837,
+        "recall": 0.8815,
+        "f1-score": 0.8809575219665187,
+        "support": 2000.0
+      }
+    }
+  }
+}

@@ -89,7 +89,7 @@ class Individuo:
         "random_state":      [31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97],
         "min_samples_leaf":  list(range(6, 50)),
         "min_samples_split": list(range(12, 100)),
-        "n_jobs":            list(range(-1, 8)),
+        "n_jobs":            [-1, 1, 2, 3, 4, 5, 6, 7, 8],
     }
 
     def __init__(self, hiperparametros: dict) -> None:

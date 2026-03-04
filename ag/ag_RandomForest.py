@@ -6,7 +6,9 @@
 # python -m ag.ag_RandomForest --populacao 200 --geracoes 100 --mutacao 0.2 --torneio 5
 
 import argparse
+import json
 import threading
+from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
@@ -14,9 +16,13 @@ import plotly.graph_objs as go
 from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
 
+from typing import Optional
+
 from ag.carga import carregar_modelo_completo, carregar_dataframe, carregar_split
+from ag.carga.modelo import PacoteModelo
+from ag.classes.individuo import Individuo
 from ag.classes.populacao import Populacao
-from ag.salvar_modelo_final import treinar_e_salvar_modelo_final
+# from ag.salvar_modelo_final import treinar_e_salvar_modelo_final
 
 # =============================================================================
 # Parâmetros do Algoritmo Genético (via linha de comando ou defaults)
@@ -46,6 +52,73 @@ POPULATION_SIZE: int = args.populacao
 MAX_GENERATIONS: int = args.geracoes
 TAXA_MUTACAO: float = args.mutacao
 TAMANHO_TORNEIO: int = args.torneio
+
+# Diretório data/ relativo à raiz do projeto
+_DIR_DATA = Path(__file__).resolve().parent.parent / "data"
+
+
+def _converter_para_json(obj: object) -> object:
+    """Converte valores numpy para tipos nativos Python para serialização JSON."""
+    if isinstance(obj, dict):
+        return {k: _converter_para_json(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_converter_para_json(x) for x in obj]
+    item_fn = getattr(obj, "item", None)
+    if callable(item_fn):
+        return item_fn()
+    return obj
+
+
+def gravar_resultados_ag(
+    model: PacoteModelo,
+    melhor: Individuo,
+    diretorio_data: Optional[Path] = None,
+) -> None:
+    """
+    Grava em JSON no diretório data/:
+    - avaliacao_modelo.json: avaliação do modelo carregado (se não existir).
+    - melhor_individuo_ag_<N>.json: melhor indivíduo do AG com hiperparâmetros e aptidão.
+    """
+    dir_ = Path(diretorio_data or _DIR_DATA).resolve()
+    dir_.mkdir(parents=True, exist_ok=True)
+
+    # AVALIAÇÃO DO MODELO
+    path_avaliacao = dir_ / "avaliacao_modelo.json"
+    if not path_avaliacao.exists():
+        dados_avaliacao = _converter_para_json(model.aptidao.to_dict())
+        path_avaliacao.write_text(
+            json.dumps(dados_avaliacao, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        print(f"[OK] Gravado AVALIAÇÃO DO MODELO: {path_avaliacao}")
+
+    # MELHOR INDIVÍDUO
+    contador = 1
+    while True:
+        path_melhor = dir_ / f"melhor_individuo_ag_{contador}.json"
+        if not path_melhor.exists():
+            break
+        contador += 1
+
+    dados_melhor = {
+        "parametros_execucao": {
+            "populacao": POPULATION_SIZE,
+            "geracoes": MAX_GENERATIONS,
+            "taxa_mutacao": TAXA_MUTACAO,
+            "tamanho_torneio": TAMANHO_TORNEIO,
+        },
+        "hiperparametros": melhor.hiperparametros,
+        "aptidao": (
+            _converter_para_json(melhor.aptidao.to_dict())
+            if melhor.aptidao is not None
+            else None
+        ),
+    }
+    path_melhor.write_text(
+        json.dumps(dados_melhor, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    print(f"[OK] Gravado MELHOR INDIVÍDUO AG {contador}: {path_melhor}")
 
 
 def parar_ag(geracao_atual: int) -> bool:
@@ -266,15 +339,15 @@ while not parar_ag(geracao):
 population.avaliar_aptidao(split=split)
 melhor = population.melhor_individuo()
 best_params = melhor.hiperparametros
-treinar_e_salvar_modelo_final(
-    best_params=best_params,
-    split=split,
-    output_path="data/modelo_completo.joblib",
-    target_name="HOSPITALIZ",
-)
-print("[OK] Saved final optimized model to data/modelo_completo.joblib")
+
 print("\n--- Resultado Final ---")
 print(melhor)
+
+# =============================================================================
+# GRAVA A ACURACIA DO MODELO DE CARGA E OS VALORES DE EXECUCAO, 
+# HIPERPARÂMETROS E ACURACIA  DO MELHOR INDIVÍDUO DO AG
+# =============================================================================
+gravar_resultados_ag(model=model, melhor=melhor)
 
 # =========================================================================
 # Comparação de hiperparâmetros: modelo carregado vs melhor indivíduo do AG
