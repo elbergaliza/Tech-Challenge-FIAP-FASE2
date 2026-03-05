@@ -100,7 +100,7 @@ if __name__ == "__main__":
             metadata=getattr(pacote, "metadata", {}) or {},
         ),
         resumo_exame=montar_resumo_exame_original(dados_originais),
-        texto_clinico=None,
+        texto_clinico="",
     )
 
     gerador = get_laudo_generator()
