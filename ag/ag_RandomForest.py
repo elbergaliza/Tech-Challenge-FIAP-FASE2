@@ -131,22 +131,35 @@ def parar_ag(geracao_atual: int) -> bool:
 app = Dash(__name__)
 
 # Histórico compartilhado AG → Dash
+# Histórico compartilhado AG → Dash
 historico = {
     "geracao": [],
     "melhor_roc": [],
+    "acuracia_treino": [],
+    "acuracia_teste": [],
+    "accuracy_report": [],
+    "grave_precision": [],
+    "grave_recall": [],
+    "grave_f1": [],
+    "nao_grave_precision": [],
+    "nao_grave_recall": [],
+    "nao_grave_f1": [],
     "tempo_total": [],
     "tempo_medio": [],
+    "hiperparametros": [],
+    "overfitting": [],
     "cv_media": [],
     "cv_std": [],
-    "hiperparametros": [],
 }
 
 app.layout = html.Div(
     [
         html.H2("Evolução do Algoritmo Genético"),
         dcc.Graph(id="grafico-principal"),
+        dcc.Graph(id="grafico-overfitting"),
         dcc.Graph(id="grafico-cv"),
         dcc.Graph(id="grafico-dist"),
+        dcc.Graph(id="grafico-classification"),
         dcc.Graph(id="grafico-corr"),
         dcc.Interval(id="intervalo", interval=1000, n_intervals=0),
     ]
@@ -156,45 +169,95 @@ app.layout = html.Div(
 @app.callback(
     Output("grafico-principal", "figure"),
     Output("grafico-cv", "figure"),
+    Output("grafico-overfitting", "figure"),
     Output("grafico-dist", "figure"),
+    Output("grafico-classification", "figure"),
     Output("grafico-corr", "figure"),
     Input("intervalo", "n_intervals"),
 )
 def atualizar_dash(_):
-    # =======================
+    # =====================================================================
     # Gráfico principal
-    # =======================
+    # Demonstra a evolução global do melhor indivíduo por geração:
+    # - Capacidade discriminativa (ROC-AUC)
+    # - Performance em treino e teste
+    # - Indícios de overfitting
+    # - Custo computacional da geração
+    # =====================================================================
     fig_main = go.Figure()
 
-    fig_main.add_trace(
-        go.Scatter(
-            x=historico["geracao"],
-            y=historico["melhor_roc"],
-            mode="lines+markers",
-            name="Melhor ROC-AUC",
-        )
-    )
+    fig_main.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["melhor_roc"],
+        mode="lines+markers",
+        name="Melhor individuo"
+    ))
 
-    fig_main.add_trace(
-        go.Scatter(
-            x=historico["geracao"],
-            y=historico["tempo_total"],
-            mode="lines+markers",
-            name="Tempo total",
-            yaxis="y2",
-        )
-    )
+    fig_main.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["acuracia_treino"],
+        mode="lines",
+        name="Acurácia Treino"
+    ))
+
+    fig_main.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["acuracia_teste"],
+        mode="lines",
+        name="Acurácia Teste"
+    ))
+
+    fig_main.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["tempo_total"],
+        mode="lines",
+        name="Tempo total",
+        yaxis="y2"
+    ))
 
     fig_main.update_layout(
         template="plotly_dark",
         xaxis_title="Geração",
-        yaxis=dict(title="ROC-AUC"),
+        yaxis=dict(title="Score"),
         yaxis2=dict(title="Tempo (s)", overlaying="y", side="right"),
     )
 
-    # =======================
-    # Gráfico CV
-    # =======================
+    # =====================================================================
+    # Gráfico Overfitting
+    # Mede o gap entre treino e teste
+    # Avalia o nível de generalização do modelo
+    # Valores altos indicam possível overfitting
+    # Valores próximos de zero indicam boa estabilidade
+    # =====================================================================
+    fig_over = go.Figure()
+
+    fig_over.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["overfitting"],
+        mode="lines+markers",
+        name="Gap Treino - Teste"
+    ))
+
+    fig_over.add_hline(
+        y=0.05,
+        line_dash="dash",
+        annotation_text="Zona de risco",
+    )
+
+    fig_over.update_layout(
+        template="plotly_dark",
+        title="Monitoramento de Overfitting",
+        xaxis_title="Geração",
+        yaxis_title="Diferença (Treino - Teste)"
+    )
+
+    # =====================================================================
+    # Gráfico validação cruzada(CV)
+    # Mede robustez estatística do modelo
+    # CV média alta + desvio baixo → modelo consistente
+    # CV média alta + desvio alto → modelo instável entre folds
+    # CV média baixa → modelo com baixa generalização
+    # =====================================================================
     fig_cv = go.Figure()
 
     fig_cv.add_trace(
@@ -202,7 +265,7 @@ def atualizar_dash(_):
             x=historico["geracao"],
             y=historico["cv_media"],
             mode="lines+markers",
-            name="CV média",
+            name="Média da validação cruzada",
         )
     )
 
@@ -211,7 +274,7 @@ def atualizar_dash(_):
             x=historico["geracao"],
             y=historico["cv_std"],
             mode="lines+markers",
-            name="CV std",
+            name="Desvio padrão",
         )
     )
 
@@ -222,9 +285,51 @@ def atualizar_dash(_):
         yaxis_title="Score",
     )
 
-    # =======================
-    # Distribuição hiperparâmetros
-    # =======================
+    # =====================================================================
+    # Gráfico classificação
+    # Mede comportamento clínico do modelo
+    # Recall Grave → capacidade de detectar pacientes graves (evita falso negativo clínico)
+    # Precision Grave → quantos pacientes classificados como graves realmente são graves
+    # F1 → equilíbrio entre precisão e recall
+    # Permite avaliar se o modelo está sacrificando segurança clínica para ganhar performance global
+    # =====================================================================
+
+    fig_class = go.Figure()
+
+    fig_class.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["grave_recall"],
+        mode="lines+markers",
+        name="Recall Grave"
+    ))
+
+    fig_class.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["grave_f1"],
+        mode="lines",
+        name="F1 Grave"
+    ))
+
+    fig_class.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["nao_grave_recall"],
+        mode="lines",
+        name="Recall Não Grave"
+    ))
+
+    fig_class.update_layout(
+        template="plotly_dark",
+        title="Evolução das Métricas por Classe",
+        xaxis_title="Geração",
+        yaxis_title="Score"
+    )
+
+    # =====================================================================
+    # Correlação entre hiperparâmetros
+    # Mostra correlação entre hiperparâmetros
+    # Identifica combinações de genes que evoluem juntas
+    # Pode revelar padrões estruturais aprendidos pelo AG
+    # =====================================================================
     if historico["hiperparametros"]:
         df_hp = pd.DataFrame(historico["hiperparametros"])
         fig_dist = px.box(df_hp, template="plotly_dark",
@@ -237,7 +342,7 @@ def atualizar_dash(_):
         fig_dist = go.Figure()
         fig_corr = go.Figure()
 
-    return fig_main, fig_cv, fig_dist, fig_corr
+    return fig_main, fig_over, fig_cv, fig_class, fig_dist, fig_corr
 
 
 # =============================================================================
@@ -310,6 +415,26 @@ while not parar_ag(geracao):
     historico["tempo_medio"].append(tempo_medio_ind)
     historico["cv_media"].append(melhor_cv)
     historico["cv_std"].append(melhor_std)
+
+    apt = melhor.aptidao
+
+    historico["acuracia_treino"].append(apt.acuracia_treino)
+    historico["acuracia_teste"].append(apt.acuracia_teste)
+
+    overfitting = apt.acuracia_treino - apt.acuracia_teste
+    historico["overfitting"].append(overfitting)
+
+    report = apt.classification_report
+
+    historico["accuracy_report"].append(report["accuracy"])
+
+    historico["grave_precision"].append(report["Grave"]["precision"])
+    historico["grave_recall"].append(report["Grave"]["recall"])
+    historico["grave_f1"].append(report["Grave"]["f1-score"])
+
+    historico["nao_grave_precision"].append(report["Não grave"]["precision"])
+    historico["nao_grave_recall"].append(report["Não grave"]["recall"])
+    historico["nao_grave_f1"].append(report["Não grave"]["f1-score"])
 
     # salva hiperparâmetros da população inteira
     for ind in population.individuos:
