@@ -48,7 +48,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install joblib pandas scikit-learn boto3
+          pip install joblib pandas scikit-learn boto3 numpy
 
       - name: Export split to CSV
         run: python scripts/export_split_to_csv.py --out-dir data/sagemaker
@@ -95,6 +95,80 @@ jobs:
             -var="hpo_max_jobs=${MAX_JOBS}" \
             -var="hpo_max_parallel_jobs=${MAX_PARALLEL_JOBS}" \
             -var="hpo_max_runtime_seconds=${MAX_RUNTIME_SECONDS}"
+
+      - name: Collect HPO report
+        run: |
+          python scripts/start_sagemaker_hpo.py \
+            --base-job-name "${HPO_JOB_NAME}" \
+            --region "${AWS_REGION}" \
+            --objective-metric-name "validation:roc_auc" \
+            --results-dir artifacts/hpo
+
+      - name: Collect CloudWatch logs (best training job)
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          import boto3
+
+          artifacts = Path("artifacts/hpo")
+          report_path = artifacts / "report.json"
+          report = json.loads(report_path.read_text(encoding="utf-8"))
+          best_job = report.get("melhor_training_job")
+          if not best_job:
+              raise RuntimeError("melhor_training_job não encontrado no report.json")
+
+          region = os.environ["AWS_REGION"]
+          logs = boto3.client("logs", region_name=region)
+          log_group = "/aws/sagemaker/TrainingJobs"
+
+          out_path = artifacts / "best_training_job_cloudwatch.log"
+          with out_path.open("w", encoding="utf-8") as out:
+              out.write(f"\n===== {best_job} =====\n")
+              streams = []
+              paginator = logs.get_paginator("describe_log_streams")
+              for page in paginator.paginate(
+                  logGroupName=log_group,
+                  logStreamNamePrefix=best_job,
+                  orderBy="LogStreamName",
+                  descending=False,
+              ):
+                  streams.extend(page.get("logStreams", []))
+              if not streams:
+                  out.write("no streams found\n")
+              else:
+                  for stream in streams:
+                      stream_name = stream["logStreamName"]
+                      out.write(f"\n--- stream: {stream_name} ---\n")
+                      next_token = None
+                      while True:
+                          kwargs = {
+                              "logGroupName": log_group,
+                              "logStreamName": stream_name,
+                              "startFromHead": True,
+                          }
+                          if next_token:
+                              kwargs["nextToken"] = next_token
+                          resp = logs.get_log_events(**kwargs)
+                          for event in resp.get("events", []):
+                              out.write(event.get("message", "") + "\n")
+                          new_token = resp.get("nextForwardToken")
+                          if not new_token or new_token == next_token:
+                              break
+                          next_token = new_token
+
+          print(f"CloudWatch logs saved: {out_path}")
+          PY
+
+      - name: Upload HPO artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpo-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/hpo
+          if-no-files-found: error
 
       - name: Show HPO cost estimate snapshot
         run: |
