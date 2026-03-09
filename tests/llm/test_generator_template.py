@@ -17,36 +17,37 @@ def make_input(proba):
     )
 
 
-def test_template_has_pt_br_sections() -> None:
+def test_template_has_english_sections() -> None:
     generator = TemplateLaudoGenerator()
     text = generator.gerar(make_input(0.8))
 
-    assert "1) Resultado do modelo" in text
-    assert "2) Interpretação" in text
-    assert "3) Pontos de atenção" in text
-    assert "4) Limitações" in text
-    assert "Este resultado não substitui avaliação médica." in text
+    assert "1) Model output" in text
+    assert "2) Interpretation" in text
+    assert "3) Points of attention" in text
+    assert "4) Limitations" in text
+    assert "This text does not replace medical evaluation" in text
 
 
 def test_template_risk_band_low() -> None:
     generator = TemplateLaudoGenerator()
     text = generator.gerar(make_input(0.2))
-    assert "nível baixo" in text
+    assert "probability is low" in text
 
 
 def test_template_risk_band_moderate() -> None:
     generator = TemplateLaudoGenerator()
     text = generator.gerar(make_input(0.5))
-    assert "nível moderado" in text
+    assert "probability is moderate" in text
 
 
 def test_template_risk_band_high() -> None:
     generator = TemplateLaudoGenerator()
     text = generator.gerar(make_input(0.8))
-    assert "nível alto" in text
+    assert "probability is high" in text
 
 
 def test_template_risk_band_undetermined() -> None:
     generator = TemplateLaudoGenerator()
     text = generator.gerar(make_input(None))
-    assert "nível indeterminado" in text
+    assert "probability is undetermined" in text
+    assert "Probability (positive class): not provided" in text
