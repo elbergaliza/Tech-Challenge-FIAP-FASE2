@@ -7,7 +7,6 @@ class TemplateLaudoGenerator(LaudoGenerator):
         r = entrada.resultado
         c = entrada.contexto
 
-        # Simple risk bands (adjust as needed)
         proba = r.probabilidade_positiva
         if proba is None:
             risk_band = "undetermined"
