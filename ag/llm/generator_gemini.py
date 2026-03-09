@@ -1,18 +1,12 @@
-﻿import os
-from google import genai
-
+from .client_base import LLMClient
 from .generator_base import LaudoGenerator
 from .laudos_type import EntradaLaudo
 from .prompts import SYSTEM_PROMPT, FORMAT_INSTRUCTIONS
 
 
 class GeminiLaudoGenerator(LaudoGenerator):
-    def __init__(self, model: str, max_output_tokens: int = 450):
-        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise RuntimeError("Missing GEMINI_API_KEY (or GOOGLE_API_KEY) in environment/.env")
-
-        self.client = genai.Client(api_key=api_key)
+    def __init__(self, model: str, client: LLMClient, max_output_tokens: int = 450):
+        self.client = client
         self.model = model
         self.max_output_tokens = max_output_tokens
 
@@ -37,13 +31,10 @@ class GeminiLaudoGenerator(LaudoGenerator):
         )
 
     def gerar(self, entrada: EntradaLaudo) -> str:
-        resp = self.client.models.generate_content(
-            model=self.model,
-            contents=self._build_user_prompt(entrada),
-            config={
-                "system_instruction": SYSTEM_PROMPT,
-                "max_output_tokens": self.max_output_tokens,
-                "temperature": 0.2,
-            },
+        return self.client.generate(
+            self.model,
+            self._build_user_prompt(entrada),
+            system_prompt=SYSTEM_PROMPT,
+            max_output_tokens=self.max_output_tokens,
+            temperature=0.2,
         )
-        return (resp.text or "").strip()

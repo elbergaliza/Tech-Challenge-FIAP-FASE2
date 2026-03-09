@@ -7,42 +7,42 @@ class TemplateLaudoGenerator(LaudoGenerator):
         r = entrada.resultado
         c = entrada.contexto
 
-        # Simple risk bands (adjust as needed)
         proba = r.probabilidade_positiva
         if proba is None:
-            risk_band = "undetermined"
+            risk_band = "indeterminado"
         elif proba < 0.33:
-            risk_band = "low"
+            risk_band = "baixo"
         elif proba < 0.66:
-            risk_band = "moderate"
+            risk_band = "moderado"
         else:
-            risk_band = "high"
+            risk_band = "alto"
 
         summary_items = "\n".join([f"- {k}: {v}" for k, v in entrada.resumo_exame.items()])
 
-        roc_auc_txt = f"{c.roc_auc_global:.3f}" if c.roc_auc_global is not None else "not provided"
-        acc_txt = f"{c.acuracia_teste:.3f}" if c.acuracia_teste is not None else "not provided"
+        roc_auc_txt = f"{c.roc_auc_global:.3f}" if c.roc_auc_global is not None else "não informado"
+        acc_txt = f"{c.acuracia_teste:.3f}" if c.acuracia_teste is not None else "não informado"
 
-        proba_txt = f"{proba:.4f}" if proba is not None else "not provided"
+        proba_txt = f"{proba:.4f}" if proba is not None else "não informado"
 
         return f"""\
-1) Model output
-- Model: {c.nome_modelo}
-- Target: {c.target_name}
-- Predicted class: {r.classe_predita}
-- Probability (positive class): {proba_txt}
-- Decision threshold: {r.limiar_decisao}
+1) Resultado do modelo
+- Modelo: {c.nome_modelo}
+- Alvo: {c.target_name}
+- Classe predita: {r.classe_predita}
+- Probabilidade (classe positiva): {proba_txt}
+- Limiar de decisão: {r.limiar_decisao}
 
-2) Interpretation
-- The estimated probability is {risk_band} within the model scale.
-- This result should be interpreted together with clinical assessment and other tests.
+2) Interpretação
+- A probabilidade estimada está em nível {risk_band} na escala do modelo.
+- Este resultado deve ser interpretado em conjunto com avaliação clínica e outros exames.
 
-3) Points of attention
-Summary of the provided data:
-{summary_items if summary_items else "- (no data provided)"}
+3) Pontos de atenção
+Resumo dos dados fornecidos:
+{summary_items if summary_items else "- (sem dados fornecidos)"}
 
-4) Limitations
-- Global metrics (training/validation reference): ROC-AUC={roc_auc_txt}; Test accuracy={acc_txt}.
-- The model can make mistakes (false positives/false negatives).
-- This text does not replace medical evaluation and does not constitute a definitive diagnosis.
+4) Limitações
+- Métricas globais de referência: ROC-AUC={roc_auc_txt}; acurácia de teste={acc_txt}.
+- O modelo pode errar (falsos positivos/falsos negativos).
+- Este resultado não substitui avaliação médica.
+- Este texto não constitui diagnóstico definitivo.
 """
