@@ -10,12 +10,21 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 
 import joblib
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 
 
 
@@ -56,14 +65,38 @@ def main() -> None:
         random_state=args.random_state,
         n_jobs=args.n_jobs,
     )
+    t0 = time.time()
     model.fit(X_train, y_train)
+    train_duration = time.time() - t0
 
+    y_pred = model.predict(X_val)
     y_proba = model.predict_proba(X_val)
     y_score = y_proba[:, 1] if y_proba.shape[1] == 2 else y_proba
-    roc_auc = float(roc_auc_score(y_val, y_score, multi_class="ovr"))
 
-    # Métrica para o HPO capturar por regex
+    try:
+        roc_auc = float(roc_auc_score(y_val, y_score, multi_class="ovr"))
+    except ValueError:
+        roc_auc = 0.0
+    accuracy = float(accuracy_score(y_val, y_pred))
+    # average="binary" assume classe positiva = 1 (hospitalização grave)
+    precision = float(precision_score(y_val, y_pred, average="binary", zero_division=0))
+    recall = float(recall_score(y_val, y_pred, average="binary", zero_division=0))
+    f1 = float(f1_score(y_val, y_pred, average="binary", zero_division=0))
+    conf_matrix = confusion_matrix(y_val, y_pred).tolist()
+
+    clf_report = classification_report(
+        y_val,
+        y_pred,
+        output_dict=True,
+        zero_division=0,
+    )
+
+    # Métricas para o HPO capturar por regex (uma por linha)
     print(f"validation:roc_auc={roc_auc:.6f}")
+    print(f"validation:accuracy={accuracy:.6f}")
+    print(f"validation:precision={precision:.6f}")
+    print(f"validation:recall={recall:.6f}")
+    print(f"validation:f1={f1:.6f}")
 
     model_dir = Path(os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
     model_dir.mkdir(parents=True, exist_ok=True)
@@ -72,8 +105,17 @@ def main() -> None:
     metadata = {
         "target": args.target,
         "feature_names": [str(c) for c in X_train.columns],
-        "roc_auc_validation": roc_auc,
         "hyperparameters": vars(args),
+        "train_duration_seconds": round(train_duration, 3),
+        "aptidao": {
+            "roc_auc_validation": roc_auc,
+            "accuracy_validation": accuracy,
+            "precision_validation": precision,
+            "recall_validation": recall,
+            "f1_validation": f1,
+        },
+        "confusion_matrix": conf_matrix,
+        "classification_report": clf_report,
     }
     with open(model_dir / "metadata.json", "w", encoding="utf-8") as f:
         json.dump(metadata, f, ensure_ascii=True, indent=2)
