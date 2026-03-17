@@ -41,7 +41,4 @@ Summary of the provided data:
 {summary_items if summary_items else "- (no data provided)"}
 
 4) Limitations
-- Global metrics (training/validation reference): ROC-AUC={roc_auc_txt}; Test accuracy={acc_txt}.
-- The model can make mistakes (false positives/false negatives).
-- This text does not replace medical evaluation and does not constitute a definitive diagnosis.
-"""
+- This text does not replace medical evaluation and does not constitute a definitive diagnosis."""
