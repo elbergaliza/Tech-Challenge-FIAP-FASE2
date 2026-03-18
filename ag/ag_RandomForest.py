@@ -241,7 +241,7 @@ def atualizar_dash(_):
     fig_over.add_hline(
         y=0.05,
         line_dash="dash",
-        annotation_text="Zona de risco",
+        annotation_text="Possível zona de overfitting"
     )
 
     fig_over.update_layout(
@@ -286,11 +286,13 @@ def atualizar_dash(_):
     )
 
     # =====================================================================
-    # Gráfico classificação
-    # Mede comportamento clínico do modelo
-    # Recall Grave → capacidade de detectar pacientes graves (evita falso negativo clínico)
-    # Precision Grave → quantos pacientes classificados como graves realmente são graves
-    # F1 → equilíbrio entre precisão e recall
+    # Gráfico de acerto do modelo
+    # Mede a acertividade clínico do modelo
+    # Recall grave → capacidade de detectar pacientes graves (evita falso negativo clínico)
+    # Recall não grave -> capacidade de detectar pacientes não graves
+    # Precision grave → quantos pacientes classificados como graves realmente são graves
+    # Precision grave → quantos pacientes classificados como graves realmente não são graves
+    # F1 grave e não grave→ equilíbrio entre precisão e recall
     # Permite avaliar se o modelo está sacrificando segurança clínica para ganhar performance global
     # =====================================================================
 
@@ -305,9 +307,23 @@ def atualizar_dash(_):
 
     fig_class.add_trace(go.Scatter(
         x=historico["geracao"],
+        y=historico["grave_precision"],
+        mode="lines",
+        name="Precision Grave"
+    ))
+
+    fig_class.add_trace(go.Scatter(
+        x=historico["geracao"],
         y=historico["grave_f1"],
         mode="lines",
         name="F1 Grave"
+    ))
+
+    fig_class.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["nao_grave_precision"],
+        mode="lines",
+        name="Precision Não Grave"
     ))
 
     fig_class.add_trace(go.Scatter(
@@ -317,9 +333,16 @@ def atualizar_dash(_):
         name="Recall Não Grave"
     ))
 
+    fig_class.add_trace(go.Scatter(
+        x=historico["geracao"],
+        y=historico["nao_grave_f1"],
+        mode="lines",
+        name="F1 Não Grave"
+    ))
+
     fig_class.update_layout(
         template="plotly_dark",
-        title="Evolução das Métricas por Classe",
+        title="Evolução do acerto de cada geração do modelo",
         xaxis_title="Geração",
         yaxis_title="Score"
     )
@@ -410,7 +433,6 @@ while not parar_ag(geracao):
 
     # Histórico
     historico["geracao"].append(geracao)
-    historico["melhor_roc"].append(melhor_roc_auc)
     historico["tempo_total"].append(tempo_total)
     historico["tempo_medio"].append(tempo_medio_ind)
     historico["cv_media"].append(melhor_cv)
@@ -418,6 +440,7 @@ while not parar_ag(geracao):
 
     apt = melhor.aptidao
 
+    historico["melhor_roc"].append(apt.roc_auc)
     historico["acuracia_treino"].append(apt.acuracia_treino)
     historico["acuracia_teste"].append(apt.acuracia_teste)
 
