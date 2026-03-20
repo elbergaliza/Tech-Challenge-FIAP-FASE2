@@ -46,7 +46,6 @@ class Individuo:
         solução conhecida: -1   (todos os cores disponiveis)
         range: [-1, 1, 2, 3, 4, 5, 6, 7]
 
-    # A FAZER: acrescentar nos hiperparametros os valores STRING e FLOAT.
     # O "max_features" foi ignorado inicialmente para montarmos a solucao apenas com os hiperparametros numericos.
     # - max_features: str, default="sqrt"
     #     Numero maximo de features a serem consideradas para cada split.
@@ -73,15 +72,8 @@ class Individuo:
         "random_state": 42,
         "min_samples_leaf": 10,
         "min_samples_split": 10,
-        # "max_features": "sqrt",
         "n_jobs": -1
     }
-    # INDIVIDUO_DEFAULT_STRING = {
-    #     "max_features": "sqrt"
-    # }
-    # INDIVIDUO_DEFAULT_FLOAT = {
-    #     "n_jobs": -1
-    # }
 
     ESPACOS_BUSCA: dict[str, list] = {
         "n_estimators":      list(range(20, 100)),
