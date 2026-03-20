@@ -390,7 +390,6 @@ population = Populacao.gerar_inicial(
 # =============================================================================
 # FLUXOGRAMA AG - Main loop (ciclo iterativo)
 # Condição de término: Número máximo de gerações atingido.
-# TODO: colocar parametro para selecionar a condicao de termino:
 # - Número máximo de gerações atingido.
 # - Convergência da aptidão.
 # - Tempo limite de execução.
@@ -414,13 +413,12 @@ threading.Thread(target=iniciar_dashboard, daemon=True).start()
 while not parar_ag(geracao):
     # =========================================================================
     # FLUXOGRAMA AG - Avalia Aptidão dos Indivíduos
-    # Selecionamos as melhores soluções usando função de aptidão (ROC-AUC). # TODO: retirar comentario de avaliar aptidao
+    # Selecionamos as melhores soluções usando função de aptidão (ROC-AUC).
     # =========================================================================
     tempo_total, tempos_individuos = population.avaliar_aptidao(split=split)
     tempo_medio_ind = sum(tempos_individuos) / \
         len(tempos_individuos) if tempos_individuos else 0
 
-    # TODO: colocar as duas linhas abaixo dentro de melhor individuo para usar o parametro de aptidao
     melhor = population.melhor_individuo()
     melhor_roc_auc = melhor.aptidao.roc_auc if melhor.aptidao else 0.0
 
