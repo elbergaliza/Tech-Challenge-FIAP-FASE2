@@ -20,5 +20,5 @@ Write the report in Brazilian Portuguese (pt-BR) and use ONLY the sections below
 In section 2 (Interpretação), you MUST end with exactly ONE short disclaimer sentence stating that the model output does not replace medical evaluation.
 Do NOT create a separate "Limitações" section.
 Do NOT add bullet lists outside the three sections.
-Keep it concise and actionable for clinicians.
+Keep it concise and actionable for clinicians
 """
