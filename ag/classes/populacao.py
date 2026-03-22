@@ -148,7 +148,6 @@ class Populacao:
         """
         Ordena a população por aptidão em ordem decrescente (melhor primeiro).
         """
-        # TODO: acrescentar as outras metricas de aptidao como parametro para a ordenacao
         self._individuos.sort(
             key=lambda i: i.aptidao.roc_auc if i.aptidao is not None else 0.0,
             reverse=True,
@@ -221,7 +220,6 @@ class Populacao:
         """
         self.ordenar_por_aptidao()
 
-        # TODO: colocar teste de usar ou nao o elitismo
         elite = self._individuos[0].copiar()
         nova_pop: list[Individuo] = [elite]
 
