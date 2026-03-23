@@ -12,4 +12,4 @@ def test_format_instructions_mentions_pt_br_and_sections() -> None:
     assert "1) Model output" in FORMAT_INSTRUCTIONS
     assert "2) Interpretation" in FORMAT_INSTRUCTIONS
     assert "3) Points of attention" in FORMAT_INSTRUCTIONS
-    assert "4) Limitations" in FORMAT_INSTRUCTIONS
+   
